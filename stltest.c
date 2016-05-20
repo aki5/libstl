@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <getopt.h>
 #include "stlfile.h"
 
 int
@@ -13,11 +14,26 @@ main(int argc, char *argv[])
 	uint32_t *enext, *evert;
 	uint16_t *attrs;
 	uint32_t ntris, nedges, nverts;
-	int i;
+	int i, nrounds, opt;
 
-	for(i = 0; i < 5; i++){
+	nrounds = 5;
+	while((opt = getopt(argc, argv, "n:")) != -1){
+		switch(opt){
+		case 'n':
+			nrounds = strtol(optarg, NULL, 10);
+			break;
+		default:
+		caseusage:
+			fprintf(stderr, "usage: %s [-n nrounds] path/to/file.stl\n", argv[0]);
+			exit(1);
+		}
+	}
+	if(optind == argc)
+		goto caseusage;
+
+	for(i = 0; i < nrounds; i++){
 		if(argc > 1){
-			fp = fopen(argv[1], "rb");
+			fp = fopen(argv[optind], "rb");
 		} else {
 			fp = stdin;
 		}

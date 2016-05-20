@@ -20,7 +20,7 @@ triple_gear.stl:
 	curl -L -o triple_gear.stl http://www.thingiverse.com/download:182636
 
 test: stltest triple_gear.stl
-	./stltest triple_gear.stl
+	./stltest -n5 triple_gear.stl
 
 clean:
 	rm -f stltest libstl.a *.o
