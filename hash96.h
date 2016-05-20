@@ -10,6 +10,15 @@ nextpow2(uint32_t val)
 	return ++val;
 }
 
+/*
+ *	These hash functions have been adapted from Bob Jenkins's
+ *	excellent public domain work in http://burtleburtle.net/bob/c/lookup3.c
+ *
+ *	There are faster hash functions based on special instructions
+ *	or if a fast multiplier is assumed, but these work fast enough
+ *	in practice and produce consistent performance on lower end
+ *	processors too.
+ */
 #define rot32(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
 static void
 mix96(uint32_t *a, uint32_t *b, uint32_t *c)
