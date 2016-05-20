@@ -20,19 +20,6 @@ nextpow2(uint32_t val)
  *	processors too.
  */
 #define rot32(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
-static void
-mix64(uint32_t *a, uint32_t *b)
-{
-	uint32_t cv = *b;
-	uint32_t *c = &cv;
-	*a -= *c;  *a ^= rot32(*c, 4);  *c += *b;
-	*b -= *a;  *b ^= rot32(*a, 6);  *a += *c;
-	*c -= *b;  *c ^= rot32(*b, 8);  *b += *a;
-	*a -= *c;  *a ^= rot32(*c,16);  *c += *b;
-	*b -= *a;  *b ^= rot32(*a,19);  *a += *c;
-	*c -= *b;  *c ^= rot32(*b, 4);  *b += *a;
-}
-
 static uint32_t
 final64(uint32_t a, uint32_t b)
 {
