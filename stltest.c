@@ -10,7 +10,7 @@ main(int argc, char *argv[])
 	FILE *fp;
 	float *verts;
 	uint32_t *tris;
-	uint32_t *edges;
+	uint32_t *enext, *evert;
 	uint16_t *attrs;
 	uint32_t ntris, nedges, nverts;
 	int i;
@@ -22,12 +22,13 @@ main(int argc, char *argv[])
 			fp = stdin;
 		}
 		loadstl(fp, &verts, &nverts, &tris, &attrs, &ntris);
-		halfedges(tris, ntris, &edges, &nedges);
+		halfedges(tris, ntris, &enext, &evert, &nedges);
 		fclose(fp);
 		free(tris);
 		free(verts);
 		free(attrs);
-		free(edges);
+		free(enext);
+		free(evert);
 	}
 
 	return 0;
