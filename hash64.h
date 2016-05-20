@@ -27,7 +27,7 @@ mix64(uint32_t *a, uint32_t *b)
 static uint32_t
 final64(uint32_t a, uint32_t b)
 {
-	uint32_t c = b;
+	uint32_t c = a+b;
 	c ^= b; c -= rot32(b,14);
 	a ^= c; a -= rot32(c,11);
 	b ^= a; b -= rot32(a,25);

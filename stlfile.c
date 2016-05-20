@@ -20,19 +20,21 @@ get32(uint8_t *buf)
 static uint32_t
 vertex(uint32_t *verts, uint32_t nverts, uint32_t *vht, uint32_t vhtcap, uint32_t *vert)
 {
-	uint32_t *vip;
+	uint32_t *vip, vi;
 	uint32_t hash;
 	uint32_t i;
 
 	hash = final96(vert[0], vert[1], vert[2]);
 	for(i = 0; i < vhtcap; i++){
 		vip = vht + ((hash + i) & (vhtcap - 1));
-		if(*vip == 0){
+		vi = *vip;
+		if(vi == 0){
 			*vip = nverts+1;
-			return *vip-1;
+			return nverts;
 		}
-		if(cmp96(vert, verts + 3*(*vip-1)) == 0)
-			return *vip-1;
+		vi--;
+		if(cmp96(vert, verts + 3*vi) == 0)
+			return vi;
 
 	}
 	return ~(uint32_t)0;
@@ -73,17 +75,19 @@ loadstl(FILE *fp, float **vertp, uint32_t *nvertp, uint32_t **trip, uint16_t **a
 			fprintf(stderr, "loadstl: short read at triangle %d/%d\n", i, ntris);
 			goto exit_fail;
 		}
+		// there's a normal vector at buf[0..11] which we are ignoring
 		for(ti = 0; ti < 3; ti++){
-			uint32_t *vertp;
-			vertp = (uint32_t *)(buf + ti*12);
-			vi = vertex(verts, nverts, vht, vhtcap, vertp);
+			uint32_t *vert;
+			vert = (uint32_t *)buf + 3 + 3*ti;
+			vi = vertex(verts, nverts, vht, vhtcap, vert);
 			if(vi == ~(uint32_t)0){
 				fprintf(stderr, "loadstl: vertex hash full at triangle %d/%d\n", i, ntris);
 				goto exit_fail;
 			}
 			if(vi == nverts){
-				copy96(verts + 3*nverts, vertp);
+				copy96(verts + 3*nverts, vert);
 				nverts++;
+			} else {
 			}
 			tris[3*i+ti] = vi;
 		}

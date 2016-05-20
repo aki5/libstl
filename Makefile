@@ -1,4 +1,11 @@
 
+CFLAGS=-O3 -fomit-frame-pointer
+
+HFILES=\
+	stlfile.h\
+	hash64.h\
+	hash96.h\
+
 OFILES=\
 	stlfile.o\
 	halfedge.o\
@@ -16,4 +23,8 @@ test: stltest triple_gear.stl
 	./stltest triple_gear.stl
 
 clean:
-	rm -f stltest libstl.a *.o triple_gear.stl
+	rm -f stltest libstl.a *.o
+
+distclean: clean
+	rm -f triple_gear.stl
+

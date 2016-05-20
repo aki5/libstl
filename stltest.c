@@ -10,8 +10,9 @@ main(int argc, char *argv[])
 	FILE *fp;
 	float *verts;
 	uint32_t *tris;
+	uint32_t *edges;
 	uint16_t *attrs;
-	uint32_t ntris, nverts;
+	uint32_t ntris, nedges, nverts;
 	int i;
 
 	for(i = 0; i < 5; i++){
@@ -21,10 +22,12 @@ main(int argc, char *argv[])
 			fp = stdin;
 		}
 		loadstl(fp, &verts, &nverts, &tris, &attrs, &ntris);
+		halfedges(tris, ntris, &edges, &nedges);
 		fclose(fp);
 		free(tris);
 		free(verts);
 		free(attrs);
+		free(edges);
 	}
 
 	return 0;
