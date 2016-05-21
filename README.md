@@ -3,20 +3,13 @@
 
 [![Build Status](https://travis-ci.org/aki5/libstl.svg?branch=master)](https://travis-ci.org/aki5/libstl)
 
-Libstl provides basic functions for reading and writing STL files, but instead of providing just the
-parsing function, libstl includes easy to use functions to build more meaningful data structures from the
-STL data.
+Libstl provides basic functions for reading and writing STL files, but instead of providing just the parsing function, libstl includes easy to use functions to build more meaningful data structures from the STL data.
 
-Repairing STL files is not one of the goals of libstl, because that would require changing the input
-geometry and the topology it implies. Instead, from libstl point of view, an application for repairing
-STL files would probably benefit from using libstl.
+Repairing STL files is not one of the goals of libstl, because that would require subjectively changing the input geometry and the topology it implies. Instead, from libstl point of view, an application for repairing STL files would probably benefit from using libstl.
 
 ## The half-edge data structure in libstl
 
-Libstl does not declare a `struct` to represent edges. Instead, a half-edge is an immutable unsigned integer.
-To declare and access half-edge attributes, the half-edges are used as array indices. This makes the half-edge
-open-ended, applications can add their own attributes by just declaring their own arrays and indexing them
-with the half-edges.
+Libstl does not declare a struct to represent edges. Instead, a half-edge is an immutable unsigned integer. To declare and access half-edge attributes, the half-edges are used as array indices. This makes the half-edge open-ended, applications can add their own attributes by just declaring their own arrays and indexing them with the half-edges.
 
 The half-edges are created in groups of two, so that accessing the opposing half-edge is
 a simple `edge^1` expression, flipping the least significant bit.
