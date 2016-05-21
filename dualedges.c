@@ -12,12 +12,12 @@ dualedges(uint32_t *enext, uint32_t nedges, uint32_t **vnextp)
 	uint32_t nverts;
 	uint32_t *vnext;
 
-	vnext = malloc(nedges * 2*sizeof vnext[0]);
-	for(ei = 0; ei < 2*nedges; ei++)
+	vnext = malloc(nedges * sizeof vnext[0]);
+	for(ei = 0; ei < nedges; ei++)
 		vnext[ei] = ~(uint32_t)0;
 
 	nverts = 0;
-	for(ei = 0; ei < 2*nedges; ei++){
+	for(ei = 0; ei < nedges; ei++){
 		uint32_t edge;
 		edge = ei;
 		if(vnext[edge] == ~(uint32_t)0){

@@ -11,23 +11,39 @@ Repairing STL files is not one of the goals of libstl, because that would requir
 
 Libstl does not declare a struct to represent edges. Instead, a half-edge is an immutable unsigned integer. To declare and access half-edge attributes, the half-edges are used as array indices. This makes the half-edge open-ended, applications can add their own attributes by just declaring their own arrays and indexing them with the half-edges.
 
-The half-edges are created in groups of two, so that accessing the opposing half-edge is
-a simple `edge^1` expression, flipping the least significant bit.
+The half-edges are created in groups of two, so that accessing the opposing half-edge is a simple `edge^1` expression, flipping the least significant bit.
 
 ![Half-Edge data structure](https://raw.githubusercontent.com/aki5/libstl/master/half-edges.png)
 
-The figure above illustrates this principle. The `next` array contains loops around the faces
-of the mesh. At every index, the `next` array contains the following half-edge. Likewise, the
-`vert` array contains a vertex identifier corresponding to the source of each half-edge.
+The figure above illustrates this principle. The `next` array contains loops around the faces of the mesh. At every index, the `next` array contains the following half-edge. Likewise, the `vert` array contains a vertex identifier corresponding to the source of each half-edge.
+
+As an example, accessing the source vertex of an edge would be `vert[edge]`, and the destination would be accessed as `vert[edge^1]`. Looping across all edges around a face would be written as follows.
+
+```
+uint start;
+start = edge;
+do {
+        edge = next[edge];
+} while(edge != start);
+```
+
+## Quad-edges in libstl
+
+The conventional quad-edge consists of four `next` pointers, where each pointer participates in a list of edges around a geometric entity.
+
+Two of the pointers in a quad-edge correspond to the `next` array in our implementation of the half-edges. The remaining two correspond to the `dual` of the half-edges, a structure where outgoing edges from a vertex are chained together in a counter-clockwise direction.
+
+The navigation operations of the traditional quad-edge data structure are the same as those in the half-edge data structure, with the addition of a `rotate` operation, which moves between the face-loop and edge-loop graphs.
+
+Instead of providing a constructor for quad-edges, we provide a `dualedges` function, which computes the dual graph. Quad-edges can be quite naturally represented as two separate `next` arrays indexed by the half-edges, say `fnext` and `vnext`, corresponding to _next around the right face_ and _next around source vertex_ respectively. The dual graph can then be passed to a function call using quad-edges by simply calling it with the array arguments swapped, compared to a call with the primal graph.
+
+Merging the two arrays to form a standard quad-edge is not very difficult either, giving a structure where a full edge is a set of four consecutive integers and slightly different arithmetic from the half-edges.
 
 ## Loadstl function
 
-_Loadstl_ reads in an STL (stereolithography) file and returns the components of an indexed triangle mesh, together
-with attributes and normal vectors from the stl file. _Loadstl_ will allocate memory for all of the arrays it
-returns.
+_Loadstl_ reads in an STL (stereolithography) file and returns the components of an indexed triangle mesh, together with attributes and normal vectors from the stl file. _Loadstl_ will allocate memory for all of the arrays it returns.
 
-Duplicate vertices in the file are merged based on exact equivalence, there is no welding threshold. If the input
-file contains holes or cracks, they will be present in the indexed triangle mesh that _loadstl_ returns.
+Duplicate vertices in the file are merged based on exact equivalence, there is no welding threshold. If the input file contains holes or cracks, they will be present in the indexed triangle mesh that _loadstl_ returns.
 
 ```
 int loadstl(FILE *fp, float **vertp, uint32_t *nvertp, uint32_t **trip, uint16_t **attrp, uint32_t *ntrip);

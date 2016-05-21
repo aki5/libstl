@@ -92,7 +92,7 @@ halfedges(uint32_t *tris, uint32_t ntris, uint32_t **nextp, uint32_t **vertp, ui
 	vert = realloc(vert, nedges * 2*sizeof vert[0]);
 	*nextp = next;
 	*vertp = vert;
-	*nedgep = nedges;
+	*nedgep = 2*nedges;
 	fprintf(stderr, "halfedges: found %d full edges\n", nedges);
 	return 0;
 
