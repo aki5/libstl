@@ -5,19 +5,24 @@
 
 ## The half-edge data structure in libstl
 
-Libstl does not declare a struct to represent edges, which is a slight departure from normal. Instead,
+Libstl does not declare a struct to represent edges, which is a departure from common wisdom. Instead,
 half-edges are represented by unsigned integers, and any number of companion arrays to map these integers
 into meaningful data.
 
-We have observed that no edge structure seems to quite fit the needs of every algorithm or application, and
-so instead of having applications modify this library to suit their needs, they can easily add more fields
-by just declaring new arrays which contain the information necessary.
+The half-edges are stored in groups of two, so the opposing half-edge is always the next integer. This
+way accessing the next half-edge is a simple `edge^1` operation.
+
+No edge structure is quite sufficient for every algorithm or application, so we hope that by using integers
+instead of linked structures to represent the edges gives an open-ended way of augmenting the edges with
+new data: just declare a new array and index it with the edges to access the necessary fields.
 
 ![Half-Edge data structure](https://raw.githubusercontent.com/aki5/libstl/master/half-edges.png)
 
 The illustration above already illustrates this principle. The `edges` array contains the face loops of
 the half-edge data structure. At every index, the array contains the index of the following half-edge. In
 a similar manner, the `verts` array has a vertex index for the source of each half-edge.
+
+## Libstl API
 
 ```
 int loadstl(FILE *fp, float **vertp, uint32_t *nvertp, uint32_t **trip, uint16_t **attrp, uint32_t *ntrip);
@@ -46,7 +51,7 @@ int halfedges(uint32_t *tris, uint32_t ntris, uint32_t **nextp, uint32_t **vertp
 _Halfedges_ computes standard half-edges from an indexed triangle mesh. The returned arrays are as follows
 * uint32_t **nextp, index of the next half-edge around a face, indexed by the half-edge id.
 * uint32_t **vertp, index of the source vertex for a half-edge, indexed by the half-edge id
-* uint32_t *nedgep, number of edges returned, half the number of half-edges
+* uint32_t *nedgep, the number of half-edges
 
 ```
 int dualedges(uint32_t *enext, uint32_t nedges, uint32_t **vnextp);
@@ -54,4 +59,5 @@ int dualedges(uint32_t *enext, uint32_t nedges, uint32_t **vnextp);
 
 _Dualedges_ computes the dual topology of the input half-edge array, meaning that if the input edges
 are chained around the faces, dualedges will return the same number of half-edges, but the chains go
-around vertices. This can be useful for subdivisions.
+around vertices. Together, halfedges and dualedges arrays form the quad-edge data structure.
+
