@@ -1,12 +1,25 @@
 
-# libstl, A very small and fast library for dealing with stl files
+# Libstl - A very small and fast library for STL files
 
 [![Build Status](https://travis-ci.org/aki5/libstl.svg?branch=master)](https://travis-ci.org/aki5/libstl)
 
+## The half-edge data structure in libstl
+
+Libstl does not declare a struct to represent edges, which is a slight departure from normal. Instead,
+half-edges are represented by unsigned integers, and any number of companion arrays to map these integers
+into meaningful data.
+
+We have observed that no edge structure seems to quite fit the needs of every algorithm or application, and
+so instead of having applications modify this library to suit their needs, they can easily add more fields
+by just declaring new arrays which contain the information necessary.
+
 ![Half-Edge data structure](https://raw.githubusercontent.com/aki5/libstl/master/half-edges.png)
 
+The illustration above already illustrates this principle. The `edges` array contains the face loops of
+the half-edge data structure. At every index, the array contains the index of the following half-edge. In
+a similar manner, the `verts` array has a vertex index for the source of each half-edge.
+
 ```
-// load stl file, compute and return an indexed triangle mesh
 int loadstl(FILE *fp, float **vertp, uint32_t *nvertp, uint32_t **trip, uint16_t **attrp, uint32_t *ntrip);
 ```
 
@@ -27,7 +40,6 @@ stl data, it can be read from fp after _loadstl_ returns. Fp does not need to be
 * uint32_t *ntrip: location for storing the number of triangles read
 
 ```
-// compute halfedges from an indexed triangle mesh
 int halfedges(uint32_t *tris, uint32_t ntris, uint32_t **nextp, uint32_t **vertp, uint32_t *nedgep);
 ```
 
@@ -37,7 +49,6 @@ _Halfedges_ computes standard half-edges from an indexed triangle mesh. The retu
 * uint32_t *nedgep, number of edges returned, half the number of half-edges
 
 ```
-// compute dual edges from half edges (return vertex loops if passed face loops, vice versa)
 int dualedges(uint32_t *enext, uint32_t nedges, uint32_t **vnextp);
 ```
 
