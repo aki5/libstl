@@ -9,8 +9,8 @@ Libstl does not declare a struct to represent edges, which is a departure from c
 half-edges are represented by unsigned integers, and any number of companion arrays to map these integers
 into meaningful data.
 
-The half-edges are stored in groups of two, so the opposing half-edge is always the next integer. This
-way accessing the next half-edge is a simple `edge^1` operation.
+The half-edges are stored in groups of two, so that accessing the opposing half-edge is a simple `edge^1`
+expression.
 
 No edge structure is quite sufficient for every algorithm or application, so we hope that by using integers
 instead of linked structures to represent the edges gives an open-ended way of augmenting the edges with
