@@ -8,7 +8,8 @@ HFILES=\
 
 OFILES=\
 	stlfile.o\
-	halfedge.o\
+	halfedges.o\
+	dualedges.o\
 
 libstl.a: $(OFILES)
 	$(AR) r $@ $(OFILES)

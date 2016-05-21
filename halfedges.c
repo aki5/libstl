@@ -54,7 +54,7 @@ halfedges(uint32_t *tris, uint32_t ntris, uint32_t **nextp, uint32_t **vertp, ui
 			e[1] = v0 < v1 ? v1 : v0; // the other
 			ei = edge(edges, nedges, eht, ehtcap, e);
 			if(ei == ~(uint32_t)0){
-				fprintf(stderr, "halfedge: hash full at triangle %d/%d cap %d\n", i, ntris, ehtcap);
+				fprintf(stderr, "halfedges: hash full at triangle %d/%d cap %d\n", i, ntris, ehtcap);
 				goto exit_fail;
 			}
 			if(ei == nedges){
@@ -81,7 +81,7 @@ halfedges(uint32_t *tris, uint32_t ntris, uint32_t **nextp, uint32_t **vertp, ui
 	// scan through, warn about orphan edges.
 	for(i = 0; i < 2*nedges; i++){
 		if(next[i] == ~(uint32_t)0){
-			fprintf(stderr, "orphan edge");
+			fprintf(stderr, "halfedges: orphan edge");
 			next[i] = i;
 		}
 	}
@@ -93,7 +93,7 @@ halfedges(uint32_t *tris, uint32_t ntris, uint32_t **nextp, uint32_t **vertp, ui
 	*nextp = next;
 	*vertp = vert;
 	*nedgep = nedges;
-	fprintf(stderr, "halfedge: found %d edges\n", nedges);
+	fprintf(stderr, "halfedges: found %d full edges\n", nedges);
 	return 0;
 
 exit_fail:
