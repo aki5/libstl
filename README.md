@@ -5,20 +5,19 @@
 
 ## The half-edge data structure in libstl
 
-Libstl does not declare a struct to represent edges, which is a departure from common wisdom.
-We find that it is best to think of the half-edge as an integer value, and to declare and access
-attributes by indexing arrays with the half-edges. This has the added benefit of making the
-library open ended: an application can easily add any attributes it needs by indexing its own
-arrays by the half-edges.
+Libstl does not declare a `struct` to represent edges. Instead, a half-edge is an immutable unsigned integer.
+To declare and access half-edge attributes, the half-edges are used as array indices. This makes the half-edge
+open-ended in a way, applications can easily add any attributes they need by just declaring and accessing their
+own arrays with the half-edges.
 
 The half-edges are stored in groups of two, so that accessing the opposing half-edge is
 a simple `edge^1` expression, ie. flipping the least significant bit.
 
 ![Half-Edge data structure](https://raw.githubusercontent.com/aki5/libstl/master/half-edges.png)
 
-The figure above illustrates this principle. The `edges` array contains face loops of
-the half-edge data structure: at every index, this array contains the following half-edge. In
-a similar manner, the `verts` array has a vertex index for the source of each half-edge.
+The figure above illustrates this principle. The `next` array contains loops around the faces
+of the mesh. At every index, the `next` array contains the following half-edge. Likewise, the
+`vert` array contains a vertex identifier corresponding to the source of each half-edge.
 
 ## Libstl API
 
