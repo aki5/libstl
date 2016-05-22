@@ -4,7 +4,7 @@ typedef uint32_t triangle_t;
 typedef uint32_t halfedge_t;
 
 // load stl file, compute and return an indexed triangle mesh
-int loadstl(FILE *fp, float **vertp, vertex_t *nvertp, triangle_t **trip, uint16_t **attrp, triangle_t *ntrip);
+int loadstl(FILE *fp, char *comment, float **vertp, vertex_t *nvertp, triangle_t **trip, uint16_t **attrp, triangle_t *ntrip);
 
 // compute halfedges from an indexed triangle mesh
 int halfedges(triangle_t *tris, triangle_t ntris, halfedge_t **nextp, vertex_t **evertp, halfedge_t *nedgep);

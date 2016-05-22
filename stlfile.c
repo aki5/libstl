@@ -42,7 +42,7 @@ vertex(uint32_t *verts, vertex_t nverts, vertex_t *vht, vertex_t vhtcap, uint32_
 }
 
 int
-loadstl(FILE *fp, float **vertp, vertex_t *nvertp, triangle_t **trip, uint16_t **attrp, triangle_t *ntrip)
+loadstl(FILE *fp, char *comment, float **vertp, vertex_t *nvertp, triangle_t **trip, uint16_t **attrp, triangle_t *ntrip)
 {
 	uint8_t buf[128];
 	triangle_t i, ti;
@@ -56,6 +56,9 @@ loadstl(FILE *fp, float **vertp, vertex_t *nvertp, triangle_t **trip, uint16_t *
 		fprintf(stderr, "loadstl: short read at header\n");
 		return -1;
 	}
+
+	if(comment != NULL)
+		memcpy(comment, buf, 80);
 
 	ntris = get32(buf+80);
 
@@ -77,8 +80,10 @@ loadstl(FILE *fp, float **vertp, vertex_t *nvertp, triangle_t **trip, uint16_t *
 		}
 		// there's a normal vector at buf[0..11] which we are ignoring
 		for(ti = 0; ti < 3; ti++){
-			uint32_t *vert;
-			vert = (uint32_t *)buf + 3 + 3*ti;
+			uint32_t vert[3];
+			vert[0] = get32(buf+12 + 4*3*ti);
+			vert[1] = get32(buf+12 + 4*3*ti+4);
+			vert[2] = get32(buf+12 + 4*3*ti+8);
 			vi = vertex(verts, nverts, vht, vhtcap, vert);
 			if(vi == ~(uint32_t)0){
 				fprintf(stderr, "loadstl: vertex hash full at triangle %d/%d\n", i, ntris);

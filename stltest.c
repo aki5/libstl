@@ -9,6 +9,7 @@ int
 main(int argc, char *argv[])
 {
 	FILE *fp;
+	char comment[80];
 	float *verts;
 	uint32_t *tris;
 	uint32_t *enext, *evert, *vnext;
@@ -37,7 +38,7 @@ main(int argc, char *argv[])
 		} else {
 			fp = stdin;
 		}
-		loadstl(fp, &verts, &nverts, &tris, &attrs, &ntris);
+		loadstl(fp, comment, &verts, &nverts, &tris, &attrs, &ntris);
 		halfedges(tris, ntris, &enext, &evert, &nedges);
 		dualedges(enext, nedges, &vnext);
 		fclose(fp);

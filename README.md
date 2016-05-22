@@ -1,28 +1,51 @@
 
-# Libstl - A very small and fast library for STL files
-
-[![Build Status](https://travis-ci.org/aki5/libstl.svg?branch=master)](https://travis-ci.org/aki5/libstl)
+# A decent library for STL files
 
 Libstl provides basic functions for reading and writing STL files, but instead of providing just the parsing function, libstl includes easy to use functions to build more meaningful data structures from the raw triangle data.
 
-Repairing STL files is not one of the goals of libstl, because that would require subjectively changing the input geometry and the topology it implies. Instead, from libstl point of view, an application for repairing STL files would probably benefit from using libstl.
+[![Build Status](https://travis-ci.org/aki5/libstl.svg?branch=master)](https://travis-ci.org/aki5/libstl)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/aki5/libstl/master/LICENSE)
 
-Below is an example program for loading an stl file and computing half-edges and dual-edges for it.
+
+## Libstl is still work in progress, but
+
+* It is small and fast, suitable for embedded systems,
+* increasingly well documented (keep reading),
+* un-opinionated and easy to extend,
+* returns an indexed triangle mesh,
+* can compute half-edge or quad-edge data structures,
+* supports 15-bit triangle colors,
+* treats concatenation of multiple STL files as a polyhedral complex
+	* keep calling `loadstl()` until it fails, 
+	* comment field defines per polyhedron attributes,
+	* simplest data format for defining multi-material 3d prints
+
+Repairing STL files is not one of the goals of _libstl_, because that would require subjectively changing the input geometry and the topology it implies. Instead, from _libstl_ point of view, an application for repairing STL files would probably benefit from using it.
+
+Below is an example program for loading a file and computing half-edges and dual-edges for it.
 
 ```
 #include <stdio.h>
+#include <stdint.h>
 #include "stlfile.h"
+
 int main(void){
+	char comment[80];
 	float *vertpos;
 	triangle_t *tris, ntris;
-	halfedge_t *fnext, *vnext, nedges;
-	vertex_t *evert, nverts;
-	
+	vertex_t nverts;
+	uint16_t *triattrs;
+
 	fp = fopen("path/to/file.stl", "rb");
-	loadstl(fp, &vertpos, &nverts, &tris, NULL, &ntris);
+	loadstl(fp, comment, &vertpos, &nverts, &tris, &triattrs, &ntris);
 	fclose(fp);
+
+	halfedge_t *fnext, *vnext, nedges;
+	vertex_t *evert;
+	
 	halfedges(tris, ntris, &fnext, &evert, &nedges);
 	dualedges(fnext, nedges, &vnext);
+
 	return 0;
 }
 ```
@@ -41,7 +64,7 @@ y = vertpos[3*vert+1];
 z = vertpos[3*vert+2];
 ```
 
-If the `vertpos` array consisted of `structs` with `x`, `y` and `z` fields, the multiplication would not be necessary. However, using flat arrays like above makes it easier to tell _OpenGL_ how to fetch vertex data.
+If the `vertpos` array consisted of `structs` with `x`, `y` and `z` fields, the multiplication would not be necessary. However, using flat arrays like above makes it easier to tell _OpenGL_ where and how to fetch vertex data.
 
 By focusing on stable identifiers instead of a specific set of attributes  makes the library more open-ended: algorithms can easily add attributes to any object just by declaring temporary arrays and indexing them during computation.
 
@@ -67,15 +90,23 @@ Often, applications find that they need to create duplicates of some vertices, b
 
 ## The half-edge data structure
 
-Libstl does not declare a struct to represent edges. Instead, a half-edge is an immutable unsigned integer. To declare and access half-edge attributes, the half-edges are used as array indices. 
+A half-edge data structure consists of directed edges, conventionally looping counterclockwise around faces when looking from the outside in. A half-edge typically has at least the following properties
 
-The half-edges are created in groups of two, so that accessing the opposing half-edge is a simple `edge^1` expression, flipping the least significant bit.
+* a _source vertex_,
+* a _next half-edge_ (around left face when looking toward destination from the source), and
+* an _adjacent half-edge_ (opposite direction, loops around _adjacent face_).
+
+In a well-formed triangle mesh (orientable 2-manifold), there are no orphan half-edges, which simply tells us that there are no cracks or holes in the surface and that every vertex (and edge) takes part in only one polyhedron.
+
+_Libstl_ takes the view that a single STL file should define a single solid object, with polyhedral complexes represented as a concatenation of multiple STL files. As such, using half-edges to represent connectivity in an individual STL files should not be an issue even for multi-material applications.
+
+In _libstl_, _half-edges_ are created in pairs so that accessing the _adjacent half-edge_ is achieved by flipping the least significant bit of the _half-edge_, ie. `edge^1`. 
 
 ![Half-Edge data structure](https://raw.githubusercontent.com/aki5/libstl/master/half-edges.png)
 
 The figure above illustrates this principle. The `next` array contains loops around the faces of the mesh. At every index, the `next` array contains the following half-edge. Likewise, the `vert` array contains a vertex identifier corresponding to the source of each half-edge.
 
-As an example, accessing the source vertex of an edge would be `vert[edge]`, and the destination would be accessed as `vert[edge^1]`. Looping around edges of a face could be written as follows.
+As an example, `vert[edge]` returns the source vertex of an edge, while `vert[edge^1]` returns the source vertex of the opposing edge (aka. the destination of current edge). As a more complicated example, looping around edges of a face can be written as follows.
 
 ```
 uint start;
