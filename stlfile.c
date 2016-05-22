@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include "stlfile.h"
 #include "hash96.h"
 
 static uint32_t
@@ -17,12 +18,12 @@ get32(uint8_t *buf)
 	return (uint32_t)buf[0] + ((uint32_t)buf[1]<<8) + ((uint32_t)buf[2]<<16) + ((uint32_t)buf[3]<<24);
 }
 
-static uint32_t
-vertex(uint32_t *verts, uint32_t nverts, uint32_t *vht, uint32_t vhtcap, uint32_t *vert)
+static vertex_t
+vertex(uint32_t *verts, vertex_t nverts, vertex_t *vht, vertex_t vhtcap, uint32_t *vert)
 {
-	uint32_t *vip, vi;
-	uint32_t hash;
-	uint32_t i;
+	vertex_t *vip, vi;
+	vertex_t hash;
+	vertex_t i;
 
 	hash = final96(vert[0], vert[1], vert[2]);
 	for(i = 0; i < vhtcap; i++){
@@ -37,18 +38,17 @@ vertex(uint32_t *verts, uint32_t nverts, uint32_t *vht, uint32_t vhtcap, uint32_
 			return vi;
 
 	}
-	return ~(uint32_t)0;
+	return ~(vertex_t)0;
 }
 
 int
-loadstl(FILE *fp, float **vertp, uint32_t *nvertp, uint32_t **trip, uint16_t **attrp, uint32_t *ntrip)
+loadstl(FILE *fp, float **vertp, vertex_t *nvertp, triangle_t **trip, uint16_t **attrp, triangle_t *ntrip)
 {
 	uint8_t buf[128];
-	uint32_t i, vi, ti;
-	uint32_t nverts, vhtcap;
-	uint32_t ntris;
-	uint32_t *verts, *vht;
-	uint32_t *tris;
+	triangle_t i, ti;
+	triangle_t *tris, ntris;
+	vertex_t *vht, vi, nverts, vhtcap;
+	uint32_t *verts;
 	uint16_t *attrs;
 
 	// the comment and triangle count
