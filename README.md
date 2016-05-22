@@ -29,7 +29,7 @@ int main(void){
 
 ## Data types
 
-There are three basic data types: a _vertex_, a _triangle_ and a _half-edge_. All of them are unsigned integers, and each represents a _unique identifier_ for an object of the said type. That is, we define abstract identifiers for the types that are separate from algorithm specific details of what it means to be a _vertex_, a _triangle_ or a _half-edge_.
+There are three basic data types: a _vertex_, a _triangle_ and a _half-edge_. All of them are unsigned integers, and each represents a _unique identifier_ for an object of the said type. That is, we define abstract identifiers for the types that are separate from algorithm specific details of what it _means_ to be a _vertex_, a _triangle_ or a _half-edge_.
 
 By convention, _unique identifiers_ start from 0 and run sequentially. ~0 is used as an _invalid identifier_ where needed. Each type has its own identifier space starting from 0.
 
@@ -41,9 +41,9 @@ y = vertpos[3*vert+1];
 z = vertpos[3*vert+2];
 ```
 
-If the `vertpos` array contained structs with `x`, `y` and `z` fields instead, the multiplication would not be necessary. However, using flat arrays like above makes it easier to tell _OpenGL_ how to fetch vertex data.
+If the `vertpos` array consisted of `structs` with `x`, `y` and `z` fields, the multiplication would not be necessary. However, using flat arrays like above makes it easier to tell _OpenGL_ how to fetch vertex data.
 
-By restricting ourselves to identifiers makes the library more open-ended, algorithms can easily augment vertices or half-edges with their own data by declaring temporary arrays and indexing them during computation.
+By focusing on stable identifiers instead of a specific set of attributes  makes the library more open-ended: algorithms can easily add attributes to any object just by declaring temporary arrays and indexing them during computation.
 
 It would be nice to get type errors for using a _vertex_ as an offset to an attribute array for _half-edges_ for example, but the type system of standard C is too weak to express that.
 
@@ -53,9 +53,17 @@ The file loaders and savers in _libstl_ return indexed triangle meshes, where th
 
 ![Triangle mesh structure](https://raw.githubusercontent.com/aki5/libstl/master/triangle-mesh.png)
 
-This is a relatively common way of representing indexed triangle meshes in an _OpenGL_ applications. More often than not, applications will need to create duplicates of vertices that share the same position, because the vertex differs in some other attribute in one or more triangles sharing the same vertex position.
+Notice that due to not having declared a `struct` for the triangle corners, but representing them as a simple array, the _triangle_ needs to be scaled by 3 when accessing, as follows
 
-_Libstl_ is mostly concerned with mesh topology with respect to shared vertex positions, leaving the details of duplicating vertices for rendering purposes to the applications.
+```
+v0 = triverts[3*tri];
+v1 = triverts[3*tri+1];
+v2 = triverts[3*tri+2];
+```
+
+This is again a relatively common way of representing indexed triangle meshes to _OpenGL_.
+
+Often, applications find that they need to create duplicates of some vertices, because while they share the same position, they differ in some other attribute. _Libstl_ is mostly concerned with topology defined by position sharing, and leaves the details of vertex duplication to applications.
 
 ## The half-edge data structure
 
@@ -67,7 +75,7 @@ The half-edges are created in groups of two, so that accessing the opposing half
 
 The figure above illustrates this principle. The `next` array contains loops around the faces of the mesh. At every index, the `next` array contains the following half-edge. Likewise, the `vert` array contains a vertex identifier corresponding to the source of each half-edge.
 
-As an example, accessing the source vertex of an edge would be `vert[edge]`, and the destination would be accessed as `vert[edge^1]`. Looping across all edges around a face could be written as follows.
+As an example, accessing the source vertex of an edge would be `vert[edge]`, and the destination would be accessed as `vert[edge^1]`. Looping around edges of a face could be written as follows.
 
 ```
 uint start;
