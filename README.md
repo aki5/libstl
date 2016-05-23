@@ -1,11 +1,10 @@
 
 # A decent library for STL files
 
-Libstl provides basic functions for reading and writing STL files, but instead of providing just the parsing function, libstl includes easy to use functions to build more meaningful data structures from the raw triangle data.
-
 [![Build Status](https://travis-ci.org/aki5/libstl.svg?branch=master)](https://travis-ci.org/aki5/libstl)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/aki5/libstl/master/LICENSE)
 
+Libstl provides basic functions for reading and writing STL files, but instead of providing just the parsing function, libstl includes easy to use functions to build more meaningful data structures from the raw triangle data.
 
 ## Libstl is still work in progress, but
 
@@ -31,6 +30,7 @@ Below is an example program for loading a file and computing half-edges and dual
 
 int main(void){
 	char comment[80];
+	FILE *fp;
 	float *vertpos;
 	triangle_t *tris, ntris;
 	vertex_t nverts;
@@ -54,7 +54,7 @@ int main(void){
 
 There are three basic data types: a _vertex_, a _triangle_ and a _half-edge_. All of them are unsigned integers, and each represents a _unique identifier_ for an object of the said type. That is, we define abstract identifiers for the types that are separate from algorithm specific details of what it _means_ to be a _vertex_, a _triangle_ or a _half-edge_.
 
-By convention, _unique identifiers_ start from 0 and run sequentially. ~0 is used as an _invalid identifier_ where needed. Each type has its own identifier space starting from 0.
+By convention, _unique identifiers_ start from 0 and run sequentially. ~0 is used as an _invalid identifier_ where needed. Each type has its own identifier space starting from 0. Functions don't typically return arrays of these identifiers, but instead return a value telling how many triangles were used.
 
 Vertex positions are stored as an array of floats, and a coordinate of a vertex can be accessed by indexing the position array with the _vertex_ itself. As a technical detail, the identifier may sometimes need to be scaled when accessing an array, like in the example below, where the coordinate array has 3 floats per vertex (x, y and z).
 
@@ -72,11 +72,17 @@ It would be nice to get type errors for using a _vertex_ as an offset to an attr
 
 ## The indexed triangle mesh structure
 
-The file loaders and savers in _libstl_ return indexed triangle meshes, where the vertex data is in one array with duplicate vertex coordinates merged, and a _triverts_ array where groups of three _vertices_ express the corners of individual triangles.
+The `loadstl` function in _libstl_ return an indexed triangle meshes, where the vertex data is in one array with duplicate vertex coordinates merged, and a _triverts_ array a group of three _vertices_ express the corners for each individual triangle.
+
+As discussed in the previous section, only the number of vertices and triangles is returned, numbers counting from 0 up to that number are valid triangles.
+
+```
+int loadstl(FILE *fp, char *comment, float **vertp, vertex_t *nvertp, vertex_t **trivertp, uint16_t **attrp, triangle_t *ntrip);
+```
 
 ![Triangle mesh structure](https://raw.githubusercontent.com/aki5/libstl/master/triangle-mesh.png)
 
-Notice that due to not having declared a `struct` for the triangle corners, but representing them as a simple array, the _triangle_ needs to be scaled by 3 when accessing, as follows
+Due to not having declared a `struct` for the triangle corners, the _triangle_ needs to be scaled by 3 when accessing the `triverts` array, as follows
 
 ```
 v0 = triverts[3*tri];
@@ -100,7 +106,11 @@ In a well-formed triangle mesh (orientable 2-manifold), there are no orphan half
 
 _Libstl_ takes the view that a single STL file should define a single solid object, with polyhedral complexes represented as a concatenation of multiple STL files. As such, using half-edges to represent connectivity in an individual STL files should not be an issue even for multi-material applications.
 
-In _libstl_, _half-edges_ are created in pairs so that accessing the _adjacent half-edge_ is achieved by flipping the least significant bit of the _half-edge_, ie. `edge^1`. 
+In _libstl_, _half-edges_ are created in pairs so that accessing the _adjacent half-edge_ is achieved by flipping the least significant bit of the _half-edge_, ie. `edge^1`.
+
+```
+int halfedges(vertex_t *triverts, triangle_t ntris, halfedge_t **nextp, vertex_t **vertp, halfedge_t *nedgep);
+```
 
 ![Half-Edge data structure](https://raw.githubusercontent.com/aki5/libstl/master/half-edges.png)
 
@@ -134,9 +144,7 @@ _Loadstl_ reads in an STL (stereolithography) file and returns the components of
 
 Duplicate vertices in the file are merged based on exact equivalence, there is no welding threshold. If the input file contains holes or cracks, they will be present in the indexed triangle mesh that _loadstl_ returns.
 
-```
-int loadstl(FILE *fp, float **vertp, uint32_t *nvertp, uint32_t **trip, uint16_t **attrp, uint32_t *ntrip);
-```
+
 
 The arguments to _loadstl_ are:
 
@@ -156,9 +164,7 @@ to be shared by connected triangles, or the output will contain orphan half-edge
 
 An orphan half-edge has the value `~(uint32_t)0`.
 
-```
-int halfedges(uint32_t *tris, uint32_t ntris, uint32_t **nextp, uint32_t **vertp, uint32_t *nedgep);
-```
+
 
 The returned arrays are as follows
 
