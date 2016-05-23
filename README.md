@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/aki5/libstl.svg?branch=master)](https://travis-ci.org/aki5/libstl)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/aki5/libstl/master/LICENSE)
 
-Libstl provides basic functions for reading and writing STL files, but instead of providing just the parsing function, libstl includes easy to use functions to build more meaningful data structures from the raw triangle data.
+Libstl provides basic functions for reading STL files, but instead of providing just a parsing function, libstl includes easy to use functions to build more meaningful data structures from the raw triangle data.
 
 ## Libstl is still work in progress, but
 
@@ -77,7 +77,15 @@ The `loadstl` function in _libstl_ return an indexed triangle meshes, where the 
 As discussed in the previous section, only the number of vertices and triangles is returned, numbers counting from 0 up to that number are valid triangles.
 
 ```
-int loadstl(FILE *fp, char *comment, float **vertp, vertex_t *nvertp, vertex_t **trivertp, uint16_t **attrp, triangle_t *ntrip);
+int loadstl(
+	FILE *fp,            // file to read STL data from
+	char *comment,       // 80-byte buffer to store the STL comment to
+	float **vertposp,    // where to store the vertex position array
+	vertex_t *nvertp,    // where to store the number of vertices
+	vertex_t **trivertp, // where to store the triangle corner vertices
+	uint16_t **attrp,    // where to store the triangle attributes
+	triangle_t *ntrip    // where to store the number of triangles
+);
 ```
 
 ![Triangle mesh structure](https://raw.githubusercontent.com/aki5/libstl/master/triangle-mesh.png)
@@ -109,7 +117,13 @@ _Libstl_ takes the view that a single STL file should define a single solid obje
 In _libstl_, _half-edges_ are created in pairs so that accessing the _adjacent half-edge_ is achieved by flipping the least significant bit of the _half-edge_, ie. `edge^1`.
 
 ```
-int halfedges(vertex_t *triverts, triangle_t ntris, halfedge_t **nextp, vertex_t **vertp, halfedge_t *nedgep);
+int halfedges(
+	vertex_t *triverts, // triangle corner vertices
+	triangle_t ntris,   // number of triangles
+	halfedge_t **nextp, // where to store the half-edges
+	vertex_t **vertp,   // where to store the half-edge source vertices
+	halfedge_t *nedgep  // where to store the number of half-edges
+);
 ```
 
 ![Half-Edge data structure](https://raw.githubusercontent.com/aki5/libstl/master/half-edges.png)
@@ -126,6 +140,16 @@ do {
 } while(edge != start);
 ```
 
+We also have a `dualedges` function, which computes the dual graph of the normal half-edge graph. Quad-edges can be quite naturally represented as two separate `next` arrays indexed by the half-edges, say `fnext` and `vnext`, corresponding to _next around the right face_ and _next around source vertex_ respectively. In this model, the dual graph can be passed to a function call by simply calling it with the array arguments swapped.
+
+```
+int dualedges(
+	halfedge_t *fnext,   // primal half-edge graph (face loops)
+	halfedge_t nedges,   // number of half-edges in primal graph
+	halfedge_t **vnextp  // where to store the dual graph (vertex loops)
+);
+```
+
 ## The quad-edge data structure
 
 The conventional quad-edge consists of four `next` pointers, where each pointer participates in a list of edges around a geometric entity.
@@ -134,51 +158,21 @@ Two of the pointers in a quad-edge correspond to the `next` array in half-edges.
 
 The navigation operations of the traditional quad-edge data structure are the same as those in the half-edge data structure, with the addition of a `rotate` operation, which moves between the face-loop and edge-loop graphs.
 
-We provide a `dualedges` function, which computes the dual graph. Quad-edges can be quite naturally represented as two separate `next` arrays indexed by the half-edges, say `fnext` and `vnext`, corresponding to _next around the right face_ and _next around source vertex_ respectively. In this model, the dual graph can be passed to a function call by simply calling it with the array arguments swapped.
 
 Merging the two arrays to form a standard quad-edge is not very difficult either, giving a structure where a full edge is a set of four consecutive integers and slightly different arithmetic from the half-edges.
 
-## Loadstl function
+## On STL files and solid geometry
 
-_Loadstl_ reads in an STL (stereolithography) file and returns the components of an indexed triangle mesh, together with attributes and normal vectors from the stl file. _Loadstl_ will allocate memory for all of the arrays it returns.
+STL files are the format almost everyone in the industry loves to hate, because it is perceived as wasteful and because it does not carry connectivity or other application specific information, with the exception of a rarely implemented color encoding extension.
 
-Duplicate vertices in the file are merged based on exact equivalence, there is no welding threshold. If the input file contains holes or cracks, they will be present in the indexed triangle mesh that _loadstl_ returns.
+After a long time of whining about the badness of STL and dealing with geometry of various kinds, we are humbled to admit that STL files are in fact a reasonable format for storing and transferring piecewise linear geometry.
 
+We have found that most of the characteristics of indexed encodings don't turn out to be so great in practice.
 
+* General purpose compression algorithms (like gzip) typically compress an STL file to the same size they compress indexed encodings of the same mesh to: they are designed to exploit repetition of various kinds.
+* If geometry makes sense in an indexed format, it also makes sense as an STL file.
+* Bad geometry is a problem in indexed formats too, and needs to be repaired.
+* Rendering applications need duplicate vertices at texture seams for example, so indexed meshes written by such applications tend to have intentionally broken topologies.
+* Multiple STL files can be simply concatenated together to represent polyhedral complexes, extending standard STL to volumetric applications and beyond.
 
-The arguments to _loadstl_ are:
-
-* FILE *fp: the stdio FILE to read the stl from. Fp will not be closed, and if there is anything in the file after the
-stl data, it can be read from fp after _loadstl_ returns. Fp does not need to be seekable.
-* float **vertp: location for storing the the vertex coordinates
-* uint32_t *nvertp: location for storing the number of vertices
-* uint32_t **trip: location for storing the triangles
-* uint16_t **attrp: location for storing the triangle attributes
-* uint32_t *ntrip: location for storing the number of triangles read
-
-## Halfedges function
-
-_Halfedges_ computes standard half-edges from a triangle array, where the values are vertex identifiers.
-The half-edges will be joined based on vertex identifiers of two triangles coinciding, so vertices need
-to be shared by connected triangles, or the output will contain orphan half-edges.
-
-An orphan half-edge has the value `~(uint32_t)0`.
-
-
-
-The returned arrays are as follows
-
-* uint32_t **nextp, index of the next half-edge around a face, indexed by the half-edge id.
-* uint32_t **vertp, index of the source vertex for a half-edge, indexed by the half-edge id
-* uint32_t *nedgep, the number of half-edges
-
-## Dualedges function
-
-```
-int dualedges(uint32_t *enext, uint32_t nedges, uint32_t **vnextp);
-```
-
-_Dualedges_ computes the dual topology of the input half-edge array, meaning that if the input edges
-are chained around the faces, dualedges will return the same number of half-edges, but the chains go
-around vertices. Together, halfedges and dualedges arrays form the quad-edge data structure.
-
+So, while everyone will surely continue to hate STL, it is the least common denominator, and for a wide range of applications the competition offers no substantial upside.
