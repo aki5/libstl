@@ -6,23 +6,23 @@
 // when given an edge array where edges loop around faces, returns an
 // array where edges loop around vertices
 int
-dualedges(uint32_t *enext, uint32_t nedges, uint32_t **vnextp)
+dualedges(halfedge_t *enext, halfedge_t nedges, halfedge_t **vnextp)
 {
-	uint32_t ei;
-	uint32_t nverts;
-	uint32_t *vnext;
+	halfedge_t ei;
+	vertex_t nverts;
+	halfedge_t *vnext;
 
 	vnext = malloc(nedges * sizeof vnext[0]);
 	for(ei = 0; ei < nedges; ei++)
-		vnext[ei] = ~(uint32_t)0;
+		vnext[ei] = ~(halfedge_t)0;
 
 	nverts = 0;
 	for(ei = 0; ei < nedges; ei++){
-		uint32_t edge;
+		halfedge_t edge;
 		edge = ei;
-		if(vnext[edge] == ~(uint32_t)0){
+		if(vnext[edge] == ~(halfedge_t)0){
 			do {
-				uint32_t tmp;
+				halfedge_t tmp;
 				tmp = enext[edge^1]; // next on the opposite face.
 				vnext[edge] = tmp;
 				edge = tmp;

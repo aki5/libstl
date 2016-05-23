@@ -42,11 +42,12 @@ vertex(uint32_t *verts, vertex_t nverts, vertex_t *vht, vertex_t vhtcap, uint32_
 }
 
 int
-loadstl(FILE *fp, char *comment, float **vertp, vertex_t *nvertp, triangle_t **trip, uint16_t **attrp, triangle_t *ntrip)
+loadstl(FILE *fp, char *comment, float **vertp, vertex_t *nvertp, vertex_t **trip, uint16_t **attrp, triangle_t *ntrip)
 {
 	uint8_t buf[128];
 	triangle_t i, ti;
-	triangle_t *tris, ntris;
+	vertex_t *tris;
+	triangle_t ntris;
 	vertex_t *vht, vi, nverts, vhtcap;
 	uint32_t *verts;
 	uint16_t *attrs;

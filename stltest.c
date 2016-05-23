@@ -11,10 +11,14 @@ main(int argc, char *argv[])
 	FILE *fp;
 	char comment[80];
 	float *verts;
-	uint32_t *tris;
-	uint32_t *enext, *evert, *vnext;
+	vertex_t *tris;
+	halfedge_t *enext;
+	vertex_t *evert;
+	halfedge_t *vnext;
 	uint16_t *attrs;
-	uint32_t ntris, nedges, nverts;
+	triangle_t ntris;
+	halfedge_t nedges;
+	vertex_t nverts;
 	int i, nrounds, opt;
 
 	nrounds = 5;
