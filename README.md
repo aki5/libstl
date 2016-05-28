@@ -52,9 +52,9 @@ int main(void){
 
 ## Data types
 
-There are three basic data types: a _vertex_, a _triangle_ and a _half-edge_. All of them are unsigned integers, and each represents a _unique identifier_ for an object of the said type. That is, we define abstract identifiers for the types that are separate from algorithm specific details of what it _means_ to be a _vertex_, a _triangle_ or a _half-edge_.
+There are three basic data types: a _vertex_, a _triangle_ and a _half-edge_. All of them are unsigned integers, and each represents a _unique identifier_ for an object of the said type. We intentionally define them as abstract identifiers for the types, to separate the algorithm specific details of what it _means_ to be a _vertex_, a _triangle_ or a _half-edge_, from the object itself.
 
-By convention, _unique identifiers_ start from 0 and run sequentially. ~0 is used as an _invalid identifier_ where needed. Each type has its own identifier space starting from 0. Functions don't typically return arrays of these identifiers, but instead return a value telling how many triangles were used.
+_Unique identifiers_ start from 0 and increase sequentially. ~0 (the binary complement of 0) is used as an _invalid identifier_ where necessary. Every type has its own identifier space starting from 0, and functions don't typically return an array of the identifiers themselves, but instead return how many vertices, triangles or edges there are.
 
 Vertex positions are stored as an array of floats, and a coordinate of a vertex can be accessed by indexing the position array with the _vertex_ itself. As a technical detail, the identifier may sometimes need to be scaled when accessing an array, like in the example below, where the coordinate array has 3 floats per vertex (x, y and z).
 
@@ -66,15 +66,13 @@ z = vertpos[3*vert+2];
 
 If the `vertpos` array consisted of `structs` with `x`, `y` and `z` fields, the multiplication would not be necessary. However, using flat arrays like above makes it easier to tell _OpenGL_ where and how to fetch vertex data.
 
-By focusing on stable identifiers instead of a specific set of attributes  makes the library more open-ended: algorithms can easily add attributes to any object just by declaring temporary arrays and indexing them during computation.
-
-It would be nice to get type errors for using a _vertex_ as an offset to an attribute array for _half-edges_ for example, but the type system of standard C is too weak to express that.
+It would be nice to get type errors for things like trying to use a _vertex_ to index a _half-edges_ attribute array, but the type system of standard C is too weak to express that.
 
 ## The indexed triangle mesh structure
 
-The `loadstl` function in _libstl_ return an indexed triangle meshes, where the vertex data is in one array with duplicate vertex coordinates merged, and a _triverts_ array a group of three _vertices_ express the corners for each individual triangle.
+The `loadstl` function in _libstl_ return an indexed triangle mesh, where vertex position data is in one array, with duplicates merged, and a _triverts_ array, where a groups of three _vertices_ express the corners of individual triangles.
 
-As discussed in the previous section, only the number of vertices and triangles is returned, numbers counting from 0 up to that number are valid triangles.
+As discussed in the previous section, only the number of vertices and triangles is returned to indicate what identifiers were used.
 
 ```
 int loadstl(
@@ -90,7 +88,7 @@ int loadstl(
 
 ![Triangle mesh structure](https://raw.githubusercontent.com/aki5/libstl/master/triangle-mesh.png)
 
-Due to not having declared a `struct` for the triangle corners, the _triangle_ needs to be scaled by 3 when accessing the `triverts` array, as follows
+In the figure above, the small black numbers correspond to the triangles, and due to not having declared a `struct` for the triangle, the _triangle_ needs to be scaled by 3 when accessing the `triverts` array, as follows
 
 ```
 v0 = triverts[3*tri];
@@ -98,9 +96,9 @@ v1 = triverts[3*tri+1];
 v2 = triverts[3*tri+2];
 ```
 
-This is again a relatively common way of representing indexed triangle meshes to _OpenGL_.
+This is a relatively common way to present indexed triangle meshes to _OpenGL_, so we are showing that instead of declaring a per-triangle struct, which might make more sense from a readability standpoint.
 
-Often, applications find that they need to create duplicates of some vertices, because while they share the same position, they differ in some other attribute. _Libstl_ is mostly concerned with topology defined by position sharing, and leaves the details of vertex duplication to applications.
+Often applications find that they need to duplicate some of the vertices, because they differ in some other attribute than the position. _Libstl_ is mostly concerned with topology defined by position sharing, and leaves the details of vertex duplication to applications.
 
 ## The half-edge data structure
 
@@ -128,6 +126,7 @@ int halfedges(
 
 ![Half-Edge data structure](https://raw.githubusercontent.com/aki5/libstl/master/half-edges.png)
 
+
 The figure above illustrates this principle. The `next` array contains loops around the faces of the mesh. At every index, the `next` array contains the following half-edge. Likewise, the `vert` array contains a vertex identifier corresponding to the source of each half-edge.
 
 As an example, `vert[edge]` returns the source vertex of an edge, while `vert[edge^1]` returns the source vertex of the opposing edge (aka. the destination of current edge). As a more complicated example, looping around edges of a face can be written as follows.
@@ -140,7 +139,13 @@ do {
 } while(edge != start);
 ```
 
-We also have a `dualedges` function, which computes the dual graph of the normal half-edge graph. Quad-edges can be quite naturally represented as two separate `next` arrays indexed by the half-edges, say `fnext` and `vnext`, corresponding to _next around the right face_ and _next around source vertex_ respectively. In this model, the dual graph can be passed to a function call by simply calling it with the array arguments swapped.
+## Dual of a half-edge data structure
+
+The `dualedges` function computes a dual of the half-edge `next` graph, with edge loops going around vertices if face-loops were passed, and vice versa. Quad-edges can be quite naturally represented as two separate `next` arrays indexed by the half-edges, say `fnext` and `vnext`, corresponding to _next around the right face_ and _next around source vertex_ respectively. This way the dual graph can be passed to a function by simply calling it with the `fnext` and `vnext` arguments swapped.
+
+![Half-Edge data structure](https://raw.githubusercontent.com/aki5/libstl/master/half-edges-2.png)
+
+The left illustration above shows the _face loop_ half-edge topology, with the array indices in numbers and the `next` array values as green arrows. In a similar manner, the right illustration shows the _vertex loop_ topology computed by `dualedges`.
 
 ```
 int dualedges(
@@ -156,14 +161,16 @@ The conventional quad-edge consists of four `next` pointers, where each pointer 
 
 Two of the pointers in a quad-edge correspond to the `next` array in half-edges. The remaining two correspond to `next` arrays on the dual graph, where outgoing edges from a vertex are chained together in a counter-clockwise direction.
 
-The navigation operations of the traditional quad-edge data structure are the same as those in the half-edge data structure, with the addition of a `rotate` operation, which moves between the face-loop and edge-loop graphs.
+![Quad-edge data structure](https://raw.githubusercontent.com/aki5/libstl/master/quad-edges.png)
 
+
+The navigation operations of the traditional quad-edge data structure are the same as those in the half-edge data structure, with the addition of a `rotate` operation, which moves between the face-loop and edge-loop graphs.
 
 Merging the two arrays to form a standard quad-edge is not very difficult either, giving a structure where a full edge is a set of four consecutive integers and slightly different arithmetic from the half-edges.
 
 ## On STL files and solid geometry
 
-STL files are the format almost everyone in the industry loves to hate, because it is perceived as wasteful and because it does not carry connectivity or other application specific information, with the exception of a rarely implemented color encoding extension.
+STL files are the format almost everyone loves to hate, because it is perceived as wasteful and because it does not carry connectivity or other application specific information, with the exception of a rarely implemented color encoding extension.
 
 After a long time of whining about the badness of STL and dealing with geometry of various kinds, we are humbled to admit that STL files are in fact a reasonable format for storing and transferring piecewise linear geometry.
 

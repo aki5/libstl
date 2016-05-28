@@ -1,5 +1,6 @@
 
-CFLAGS=-O3 -fomit-frame-pointer -W -Wall
+#CFLAGS=-O3 -fomit-frame-pointer -W -Wall
+CFLAGS=-g -W -Wall
 
 HFILES=\
 	stlfile.h\
